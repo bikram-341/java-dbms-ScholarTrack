@@ -1,0 +1,13 @@
+package com.scholartrack.model;
+
+public enum ApplicationStatus {
+    SUBMITTED,
+    UNDER_DOCUMENT_VERIFICATION,
+    DOCUMENTS_FLAGGED,
+    ELIGIBILITY_VERIFIED,
+    ELIGIBILITY_FAILED,
+    UNDER_COMMITTEE_REVIEW,
+    APPROVED,
+    REJECTED,
+    DISBURSED
+}

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScholarTrack | Scholarship Application & Eligibility Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div class="brand-text">
+                <h1>Scholar<span>Track</span></h1>
+                <p>Scholarship Lifecycle & Eligibility Rule Intelligence</p>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <button class="nav-item active" data-tab="tab-tracker">
+                <i class="fa-solid fa-timeline"></i> Status Tracker
+            </button>
+            <button class="nav-item" data-tab="tab-catalog">
+                <i class="fa-solid fa-award"></i> Scholarships & Eligibility
+            </button>
+            <button class="nav-item" data-tab="tab-verification">
+                <i class="fa-solid fa-file-circle-check"></i> Verifier Desk <span class="badge" id="pending-badge">0</span>
+            </button>
+            <button class="nav-item" data-tab="tab-committee">
+                <i class="fa-solid fa-users-gear"></i> Committee & DBT
+            </button>
+            <button class="nav-item" data-tab="tab-reports">
+                <i class="fa-solid fa-database"></i> DBMS Reports
+            </button>
+        </nav>
+
+        <div class="nav-actions">
+            <!-- Notification Bell & Live Stream Dropdown -->
+            <div class="notification-wrapper">
+                <button class="notification-bell-btn" id="btn-notification-bell" onclick="toggleNotificationDropdown()" title="Status Change Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notification-badge" id="notification-badge" style="display:none;">0</span>
+                </button>
+                <div class="notification-dropdown" id="notification-dropdown">
+                    <div class="notification-header">
+                        <div class="notification-header-title">
+                            <span class="pulse-indicator"></span> Real-time Status Stream
+                        </div>
+                        <div class="notification-header-actions">
+                            <button class="btn-text-xs" onclick="markAllNotificationsAsRead()"><i class="fa-solid fa-check-double"></i> Mark all read</button>
+                        </div>
+                    </div>
+                    <div class="notification-body" id="notification-items-container">
+                        <div class="notification-empty"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading status alerts...</div>
+                    </div>
+                    <div class="notification-footer">
+                        <button class="btn-text-xs" onclick="simulateDataGrowthClick()"><i class="fa-solid fa-bolt"></i> Simulate 12 Status Transitions & Growth</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Login / Profile Pill -->
+            <div id="user-session-container">
+                <button class="btn btn-primary" id="btn-open-login" onclick="openLoginModal()">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login / Switch Role
+                </button>
+                <div id="user-profile-badge" class="user-profile-pill" style="display:none;">
+                    <div class="user-avatar" id="nav-user-avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="user-info-text">
+                        <span class="user-name" id="nav-user-name">User</span>
+                        <span class="user-role-badge" id="nav-user-role">Role</span>
+                    </div>
+                    <button class="btn-icon" onclick="openLoginModal()" title="Switch Account / Role"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+                </div>
+            </div>
+
+            <a href="/swagger-ui.html" target="_blank" class="btn btn-outline" title="Open API Documentation">
+                <i class="fa-solid fa-bolt"></i> Swagger
+            </a>
+            <a href="/h2-console" target="_blank" class="btn btn-outline" title="In-Memory DB Console">
+                <i class="fa-solid fa-table"></i> H2 DB
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+        <!-- KPI Metrics Banner -->
+        <section class="kpi-banner">
+            <div class="kpi-card">
+                <div class="kpi-icon blue"><i class="fa-solid fa-landmark"></i></div>
+                <div class="kpi-data">
+                    <span class="kpi-value" id="kpi-schemes">-</span>
+                    <span class="kpi-label">Active Schemes</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon teal"><i class="fa-solid fa-user-graduate"></i></div>
+                <div class="kpi-data">
+                    <span class="kpi-value" id="kpi-students">-</span>
+                    <span class="kpi-label">Enrolled Students</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon amber"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div class="kpi-data">
+                    <span class="kpi-value" id="kpi-pending-docs">-</span>
+                    <span class="kpi-label">Pending Verification</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon purple"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="kpi-data">
+                    <span class="kpi-value" id="kpi-approved">-</span>
+                    <span class="kpi-label">Approved Grants</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon green"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                <div class="kpi-data">
+                    <span class="kpi-value" id="kpi-disbursed">₹0</span>
+                    <span class="kpi-label">DBT Disbursed</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 1: Real-time Application Status Tracker -->
+        <section id="tab-tracker" class="tab-pane active">
+            <div class="panel-header">
+                <div>
+                    <h2><i class="fa-solid fa-binoculars"></i> Transparent Application Journey Tracker</h2>
+                    <p class="subtitle">Eliminating manual verification black holes: trace end-to-end status, review remarks & DBT disbursement.</p>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="tracker-search-input" placeholder="Enter App No. (e.g. APP-2026-00101, APP-2026-00102)...">
+                    <button class="btn btn-primary" id="btn-track"><i class="fa-solid fa-magnifying-glass"></i> Track Status</button>
+                </div>
+            </div>
+
+            <!-- Quick Select Pills -->
+            <div class="quick-chips">
+                <span class="chip-label">Quick Demo Tracking:</span>
+                <button class="chip" onclick="quickTrack('APP-2026-00101')">Priya (Under Verification)</button>
+                <button class="chip" onclick="quickTrack('APP-2026-00102')">Rahul (Flagged for Resubmission)</button>
+                <button class="chip" onclick="quickTrack('APP-2026-00103')">Ananya (Approved & Disbursed)</button>
+                <button class="chip" onclick="quickTrack('APP-2026-00104')">Vikram (Under Committee Review)</button>
+            </div>
+
+            <!-- Tracker Detailed Display -->
+            <div id="tracker-result" class="tracker-card">
+                <!-- Injected via JavaScript -->
+                <div class="empty-state">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    <h3>Select or Enter an Application Number</h3>
+                    <p>Track live verification status, officer notes, and payment transactions with complete visibility.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: Scholarships Catalog & Automated Eligibility Checker -->
+        <section id="tab-catalog" class="tab-pane">
+            <div class="catalog-grid-layout">
+                <!-- Left: Scholarship Listing -->
+                <div class="catalog-main">
+                    <div class="panel-header">
+                        <div>
+                            <h2><i class="fa-solid fa-graduation-cap"></i> Government & Institutional Scholarships</h2>
+                            <p class="subtitle">Browse available schemes, financial grants, and automated eligibility criteria.</p>
+                        </div>
+                        <div class="table-control-bar" style="margin-bottom:0; width:100%;">
+                            <div class="controls-left">
+                                <div class="control-item">
+                                    <label><i class="fa-solid fa-filter"></i> Provider:</label>
+                                    <select id="catalog-provider-filter" onchange="onScholarshipFilterChange()">
+                                        <option value="ALL">All Providers</option>
+                                        <option value="GOVERNMENT">Government Schemes</option>
+                                        <option value="INSTITUTIONAL">Institutional Grants</option>
+                                        <option value="CORPORATE_CSR">Corporate CSR</option>
+                                    </select>
+                                </div>
+                                <div class="control-item">
+                                    <label><i class="fa-solid fa-arrow-down-short-wide"></i> Sort By:</label>
+                                    <select id="catalog-sort-by" onchange="onScholarshipFilterChange()">
+                                        <option value="financialAidAmount:DESC">Aid: Highest First</option>
+                                        <option value="financialAidAmount:ASC">Aid: Lowest First</option>
+                                        <option value="title:ASC">Title (A-Z)</option>
+                                        <option value="totalSlots:DESC">Total Slots (Highest)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="controls-right">
+                                <div class="control-item">
+                                    <label>Per Page:</label>
+                                    <select id="catalog-page-size" onchange="onScholarshipFilterChange()">
+                                        <option value="4">4 per page</option>
+                                        <option value="6" selected>6 per page</option>
+                                        <option value="12">12 per page</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="scholarships-container" class="scholarship-cards-grid">
+                        <!-- Dynamic scholarship cards -->
+                    </div>
+
+                    <!-- Scholarships Pagination Bar -->
+                    <div class="pagination-bar" id="scholarships-pagination-bar">
+                        <div class="pagination-info" id="scholarships-page-info">
+                            Showing Page <strong>1</strong> of <strong>1</strong>
+                        </div>
+                        <div class="pagination-actions" id="scholarships-page-actions">
+                            <button class="page-btn" id="btn-scholarship-prev" onclick="changeScholarshipPage(-1)"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                            <span id="scholarships-page-numbers" style="display:inline-flex; gap:0.25rem;"></span>
+                            <button class="page-btn" id="btn-scholarship-next" onclick="changeScholarshipPage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Instant Eligibility Rules Engine Tester -->
+                <aside class="eligibility-sidebar">
+                    <div class="sidebar-card">
+                        <div class="card-header-styled">
+                            <h3><i class="fa-solid fa-microchip"></i> Rules Intelligence Engine</h3>
+                            <p>Verify your qualification before applying</p>
+                        </div>
+                        <form id="eligibility-form" class="eligibility-form">
+                            <div class="form-group">
+                                <label>Target Scholarship</label>
+                                <select id="elig-scheme-select" required></select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Academic GPA / %</label>
+                                    <input type="number" id="elig-gpa" step="0.01" min="0" max="100" value="8.5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Annual Income (₹)</label>
+                                    <input type="number" id="elig-income" step="1000" value="250000" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Social Category</label>
+                                    <select id="elig-category">
+                                        <option value="GENERAL">General / Open</option>
+                                        <option value="OBC">OBC</option>
+                                        <option value="SC">SC</option>
+                                        <option value="ST">ST</option>
+                                        <option value="EWS">EWS</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Gender</label>
+                                    <select id="elig-gender">
+                                        <option value="FEMALE">Female</option>
+                                        <option value="MALE">Male</option>
+                                        <option value="OTHER">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Degree Program</label>
+                                <select id="elig-degree">
+                                    <option value="UNDERGRADUATE">Undergraduate (B.Tech, B.Sc, B.Com)</option>
+                                    <option value="POSTGRADUATE">Postgraduate (M.Tech, M.Sc, MBA)</option>
+                                    <option value="DIPLOMA">Diploma</option>
+                                    <option value="PHD">Doctoral / PhD</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Evaluate Eligibility Rules
+                            </button>
+                        </form>
+
+                        <div id="eligibility-feedback" class="eligibility-verdict-box" style="display:none;"></div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- TAB 3: Verifier Desk (Resolves Manual Bottlenecks) -->
+        <section id="tab-verification" class="tab-pane">
+            <div class="panel-header">
+                <div>
+                    <h2><i class="fa-solid fa-file-signature"></i> Document Verification Desk</h2>
+                    <p class="subtitle">Direct scrutiny console for officers: review uploaded documents, record explicit rejection/flag remarks, and approve compliance.</p>
+                </div>
+                <button class="btn btn-secondary" onclick="loadPendingDocuments()"><i class="fa-solid fa-rotate"></i> Refresh Queue</button>
+            </div>
+
+            <div class="table-container">
+                <table class="custom-table" id="verifier-table">
+                    <thead>
+                        <tr>
+                            <th>Doc ID</th>
+                            <th>Application #</th>
+                            <th>Student & Scheme</th>
+                            <th>Document Type</th>
+                            <th>File Name</th>
+                            <th>Current Status</th>
+                            <th>Remarks / Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verifier-tbody">
+                        <!-- Injected via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 4: Committee & DBT Disbursement -->
+        <section id="tab-committee" class="tab-pane">
+            <div class="panel-header">
+                <div>
+                    <h2><i class="fa-solid fa-user-check"></i> Committee Selection & DBT Disbursement</h2>
+                    <p class="subtitle">Review shortlisted applications, sanction awards, and release direct fund transfers to beneficiary bank accounts.</p>
+                </div>
+                    <div class="table-control-bar" style="margin-bottom:0; width:100%;">
+                        <div class="controls-left">
+                            <div class="control-item">
+                                <label><i class="fa-solid fa-filter"></i> Stage:</label>
+                                <select id="committee-status-filter" onchange="onCommitteeFilterChange()">
+                                    <option value="">All Stages</option>
+                                    <option value="UNDER_DOCUMENT_VERIFICATION">Under Verification</option>
+                                    <option value="DOCUMENTS_FLAGGED">Documents Flagged</option>
+                                    <option value="UNDER_COMMITTEE_REVIEW">Under Committee Review</option>
+                                    <option value="APPROVED">Approved (Awaiting DBT)</option>
+                                    <option value="DISBURSED">Fully Disbursed</option>
+                                </select>
+                            </div>
+                            <div class="control-item">
+                                <label><i class="fa-solid fa-arrow-down-short-wide"></i> Sort:</label>
+                                <select id="committee-sort-by" onchange="onCommitteeFilterChange()">
+                                    <option value="submittedAt:DESC">Newest Submitted</option>
+                                    <option value="submittedAt:ASC">Oldest Submitted</option>
+                                    <option value="eligibilityScore:DESC">Merit Score (High-Low)</option>
+                                    <option value="status:ASC">Status</option>
+                                </select>
+                            </div>
+                            <div class="control-item">
+                                <label>Page Size:</label>
+                                <select id="committee-page-size" onchange="onCommitteeFilterChange()">
+                                    <option value="5" selected>5 per page</option>
+                                    <option value="10">10 per page</option>
+                                    <option value="20">20 per page</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="controls-right">
+                            <button class="btn-simulate-growth" onclick="simulateDataGrowthClick()" title="Injects 12 applications across various stages with live status change notifications to demonstrate pagination and sorting">
+                                <i class="fa-solid fa-bolt"></i> Simulate Rapid Data Growth
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="custom-table" id="committee-table">
+                    <thead>
+                        <tr>
+                            <th>App No.</th>
+                            <th>Student</th>
+                            <th>Scheme & Grant</th>
+                            <th>Academic Score</th>
+                            <th>Income</th>
+                            <th>Stage Status</th>
+                            <th>Sanction Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="committee-tbody">
+                        <!-- Injected via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Committee Pagination Bar -->
+            <div class="pagination-bar" id="committee-pagination-bar">
+                <div class="pagination-info" id="committee-page-info">
+                    Showing Page <strong>1</strong> of <strong>1</strong> (Total <strong>0</strong> applications)
+                </div>
+                <div class="pagination-actions" id="committee-page-actions">
+                    <button class="page-btn" id="btn-committee-prev" onclick="changeCommitteePage(-1)"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                    <span id="committee-page-numbers" style="display:inline-flex; gap:0.25rem;"></span>
+                    <button class="page-btn" id="btn-committee-next" onclick="changeCommitteePage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: Advanced DBMS Reports -->
+        <section id="tab-reports" class="tab-pane">
+            <div class="panel-header">
+                <div>
+                    <h2><i class="fa-solid fa-database"></i> Relational DBMS Analytical SQL Reports</h2>
+                    <p class="subtitle">Demonstrating advanced database concepts: Multi-Table JOINs, Subqueries, GROUP BY with HAVING, and Case Expressions.</p>
+                </div>
+                <div class="report-controls">
+                    <select id="dbms-report-selector">
+                        <option value="report-1">Report 1: Comprehensive Application Roster (Multi-Table JOINs)</option>
+                        <option value="report-2">Report 2: Document Verification Bottlenecks & Reviewer Queue</option>
+                        <option value="report-3">Report 3: Scholarship Budget & Slot Utilization Metrics</option>
+                        <option value="report-4">Report 4: Rule Evaluation Compliance Matrix (Auditing)</option>
+                        <option value="report-5">Report 5: Demographic & Social Category Inclusivity Distribution</option>
+                        <option value="report-6">Report 6: Institution-wise Participation & Success Rate (HAVING)</option>
+                        <option value="report-7">Report 7: DBT Banking Disbursement Audit (Reconciliation)</option>
+                        <option value="report-8">Report 8: Academic Merit & Financial Need Priority Index</option>
+                        <option value="report-9">Report 9: Unclaimed Opportunities (Subqueries with NOT EXISTS)</option>
+                        <option value="report-10">Report 10: System Audit Trail & Chronological Action Log</option>
+                    </select>
+                    <button class="btn btn-primary" id="btn-run-report">
+                        <i class="fa-solid fa-play"></i> Run Query
+                    </button>
+                </div>
+            </div>
+
+            <div class="report-meta" id="report-meta">
+                <h3 id="report-title">Select a DBMS report to execute</h3>
+                <p id="report-desc">Database query explanation will be shown here.</p>
+            </div>
+
+            <div class="table-container" id="report-table-wrapper">
+                <table class="custom-table" id="report-table">
+                    <thead id="report-thead"></thead>
+                    <tbody id="report-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Applying to Scholarship -->
+    <div id="apply-modal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-paper-plane"></i> Submit Scholarship Application</h3>
+                <button class="modal-close" onclick="closeApplyModal()">&times;</button>
+            </div>
+            <form id="apply-form" class="modal-body">
+                <input type="hidden" id="apply-scheme-id">
+                <div class="callout callout-info" id="apply-scheme-info">
+                    <strong>Scheme:</strong> <span id="modal-scheme-title"></span>
+                </div>
+                <div class="form-group">
+                    <label>Select Applicant Student</label>
+                    <select id="apply-student-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Required Documents for this Scheme:</label>
+                    <div id="modal-required-docs-list" class="docs-checklist"></div>
+                </div>
+                <div class="form-group">
+                    <label>Applicant Statement / Notes</label>
+                    <textarea id="apply-notes" rows="3" placeholder="Explain your academic goals and eligibility context..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeApplyModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Submit for Automated Evaluation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Document Verification -->
+    <div id="verify-modal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-clipboard-check"></i> Scrutinize Document</h3>
+                <button class="modal-close" onclick="closeVerifyModal()">&times;</button>
+            </div>
+            <form id="verify-form" class="modal-body">
+                <input type="hidden" id="verify-doc-id">
+                <div class="form-group">
+                    <label>Document</label>
+                    <p id="modal-doc-info" class="doc-meta-badge"></p>
+                </div>
+                <div class="form-group">
+                    <label>Officer Verdict</label>
+                    <select id="verify-status-select" required>
+                        <option value="VERIFIED">✅ VERIFY AS COMPLIANT</option>
+                        <option value="RESUBMISSION_REQUESTED">⚠️ FLAG FOR RESUBMISSION (Discrepancy Found)</option>
+                        <option value="REJECTED">❌ REJECT DOCUMENT (Fraudulent / Invalid)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Officer Review Remarks / Feedback</label>
+                    <textarea id="verify-remarks" rows="3" placeholder="Provide clear reason (e.g. Valid income certificate confirmed; or Expired document, please upload current fiscal year)." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeVerifyModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Verification Decision</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Resubmitting Document -->
+    <div id="resubmit-modal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-cloud-arrow-up"></i> Resubmit Corrected Document</h3>
+                <button class="modal-close" onclick="closeResubmitModal()">&times;</button>
+            </div>
+            <form id="resubmit-form" class="modal-body">
+                <input type="hidden" id="resubmit-doc-id">
+                <div class="callout callout-warning" id="resubmit-officer-remark"></div>
+                <div class="form-group">
+                    <label>New Document File Name</label>
+                    <input type="text" id="resubmit-filename" placeholder="e.g. Updated_Income_Certificate_2026.pdf" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeResubmitModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload & Re-evaluate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for User Login & Role Switcher -->
+    <div id="login-modal" class="modal-backdrop">
+        <div class="modal-box login-modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-lock"></i> ScholarTrack Portal Login</h3>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 1-Click Quick Demo Role Switcher -->
+                <div class="quick-role-section">
+                    <span class="section-subtitle"><i class="fa-solid fa-bolt"></i> 1-Click Fast Role Sign-In:</span>
+                    <div class="quick-role-grid">
+                        <button class="role-btn" onclick="quickLogin('priya_sharma', 'admin123')">
+                            <i class="fa-solid fa-user-graduate" style="color:#60a5fa;"></i>
+                            <div><strong>Student</strong><small>Priya Sharma (NIT)</small></div>
+                        </button>
+                        <button class="role-btn" onclick="quickLogin('officer_sharma', 'admin123')">
+                            <i class="fa-solid fa-file-signature" style="color:#fbbf24;"></i>
+                            <div><strong>Verifier Desk</strong><small>Dr. Vikram Sharma</small></div>
+                        </button>
+                        <button class="role-btn" onclick="quickLogin('committee_patel', 'admin123')">
+                            <i class="fa-solid fa-users-gear" style="color:#c084fc;"></i>
+                            <div><strong>Committee</strong><small>Prof. Arvind Patel</small></div>
+                        </button>
+                        <button class="role-btn" onclick="quickLogin('admin', 'admin123')">
+                            <i class="fa-solid fa-shield-halved" style="color:#34d399;"></i>
+                            <div><strong>Admin</strong><small>System Administrator</small></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="divider-text"><span>or enter credentials</span></div>
+
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="login-username" placeholder="e.g. priya_sharma" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" value="admin123" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/index.js"></script>
+</body>
+</html>

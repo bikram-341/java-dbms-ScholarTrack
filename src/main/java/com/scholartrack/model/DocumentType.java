@@ -1,0 +1,11 @@
+package com.scholartrack.model;
+
+public enum DocumentType {
+    INCOME_CERTIFICATE,
+    GRADE_MARKSHEET,
+    CASTE_CERTIFICATE,
+    AADHAAR_IDENTITY,
+    COLLEGE_FEE_RECEIPT,
+    RECOMMENDATION_LETTER,
+    BANK_PASSBOOK
+}
