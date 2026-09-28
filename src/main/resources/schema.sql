@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS scholarship_applications (
     eligibility_score DOUBLE DEFAULT 0.0,
     eligibility_passed BOOLEAN DEFAULT FALSE,
     eligibility_remarks VARCHAR(500),
+    is_flagged BOOLEAN DEFAULT FALSE,
+    flag_reason VARCHAR(500),
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     verified_at TIMESTAMP,
     verified_by_id BIGINT,

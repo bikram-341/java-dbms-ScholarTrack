@@ -38,6 +38,12 @@ public class ScholarshipApplication {
     @Column(name = "eligibility_remarks", length = 500)
     private String eligibilityRemarks;
 
+    @Column(name = "is_flagged")
+    private Boolean isFlagged = false;
+
+    @Column(name = "flag_reason", length = 500)
+    private String flagReason;
+
     @Column(name = "submitted_at", nullable = false)
     private LocalDateTime submittedAt = LocalDateTime.now();
 
@@ -109,6 +115,10 @@ public class ScholarshipApplication {
     public void setEligibilityPassed(Boolean eligibilityPassed) { this.eligibilityPassed = eligibilityPassed; }
     public String getEligibilityRemarks() { return eligibilityRemarks; }
     public void setEligibilityRemarks(String eligibilityRemarks) { this.eligibilityRemarks = eligibilityRemarks; }
+    public Boolean getIsFlagged() { return isFlagged; }
+    public void setIsFlagged(Boolean isFlagged) { this.isFlagged = isFlagged; }
+    public String getFlagReason() { return flagReason; }
+    public void setFlagReason(String flagReason) { this.flagReason = flagReason; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
     public LocalDateTime getVerifiedAt() { return verifiedAt; }

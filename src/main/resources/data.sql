@@ -53,12 +53,13 @@ VALUES
 ON DUPLICATE KEY UPDATE scholarship_id=scholarship_id;
 
 -- 6. Scholarship Applications
-INSERT INTO scholarship_applications (id, application_number, student_id, scholarship_id, status, eligibility_score, eligibility_passed, eligibility_remarks, submitted_at, verified_at, verified_by_id, decision_at, decision_remarks, disbursed_amount, disbursed_at, disbursement_reference)
+INSERT INTO scholarship_applications (id, application_number, student_id, scholarship_id, status, eligibility_score, eligibility_passed, eligibility_remarks, is_flagged, flag_reason, submitted_at, verified_at, verified_by_id, decision_at, decision_remarks, disbursed_amount, disbursed_at, disbursement_reference)
 VALUES
-(1, 'APP-2026-00101', 1, 4, 'UNDER_DOCUMENT_VERIFICATION', 92.5, true, 'Profile meets GPA (9.2 >= 8.0) and Income criteria. Documents under scrutiny by verification desk.', CURRENT_TIMESTAMP, NULL, 2, NULL, NULL, 0.0, NULL, NULL),
-(2, 'APP-2026-00102', 2, 2, 'DOCUMENTS_FLAGGED', 78.0, true, 'Eligible for Post-Matric scheme. Income certificate requires recent renewal stamp.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, NULL, 'Income certificate older than 1 year. Upload updated certificate.', 0.0, NULL, NULL),
-(3, 'APP-2026-00103', 3, 3, 'DISBURSED', 94.0, true, 'Top ranking PG scholar in Biotechnology. Verification and committee clearance completed.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, CURRENT_TIMESTAMP, 'Approved with highest recommendation by the Dean.', 75000.0, CURRENT_TIMESTAMP, 'UTR-SBI-2026-88992211'),
-(4, 'APP-2026-00104', 4, 1, 'UNDER_COMMITTEE_REVIEW', 83.0, true, 'Document scrutiny cleared with 100% compliance. Pending final approval meeting.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, NULL, 'Shortlisted for final sanction.', 0.0, NULL, NULL)
+(1, 'APP-2026-00101', 1, 4, 'UNDER_DOCUMENT_VERIFICATION', 92.5, true, 'Profile meets GPA (9.2 >= 8.0) and Income criteria. Documents under scrutiny by verification desk.', false, NULL, CURRENT_TIMESTAMP, NULL, 2, NULL, NULL, 0.0, NULL, NULL),
+(2, 'APP-2026-00102', 2, 2, 'DOCUMENTS_FLAGGED', 78.0, true, 'Eligible for Post-Matric scheme. Income certificate requires recent renewal stamp.', true, 'DOCUMENT_DISCREPANCY: Expired certificate', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, NULL, 'Income certificate older than 1 year. Upload updated certificate.', 0.0, NULL, NULL),
+(3, 'APP-2026-00103', 3, 3, 'DISBURSED', 94.0, true, 'Top ranking PG scholar in Biotechnology. Verification and committee clearance completed.', false, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, CURRENT_TIMESTAMP, 'Approved with highest recommendation by the Dean.', 75000.0, CURRENT_TIMESTAMP, 'UTR-SBI-2026-88992211'),
+(4, 'APP-2026-00104', 4, 1, 'UNDER_COMMITTEE_REVIEW', 83.0, true, 'Document scrutiny cleared with 100% compliance. Pending final approval meeting.', false, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, NULL, 'Shortlisted for final sanction.', 0.0, NULL, NULL),
+(5, 'APP-2026-00105', 2, 3, 'ELIGIBILITY_FAILED', 61.2, false, 'Candidate GPA 7.80 < Required 8.50 for Chancellor Fellowship.', true, 'AUTOMATED_ELIGIBILITY_FAILURE: MIN_GPA deficit (7.80 < 8.50)', CURRENT_TIMESTAMP, NULL, NULL, NULL, 'Flagged before manual review: Ineligible for merit fellowship.', 0.0, NULL, NULL)
 ON DUPLICATE KEY UPDATE application_number=application_number;
 
 -- 7. Application Documents

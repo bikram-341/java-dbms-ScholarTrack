@@ -41,6 +41,14 @@ public class DocumentServiceImpl implements DocumentService {
         ApplicationDocument doc = documentRepository.findById(request.getDocumentId())
                 .orElseThrow(() -> new IllegalArgumentException("Document not found with ID: " + request.getDocumentId()));
 
+        ScholarshipApplication app = doc.getApplication();
+        if (app != null && (Boolean.TRUE.equals(app.getIsFlagged()) || Boolean.FALSE.equals(app.getEligibilityPassed()) || app.getStatus() == ApplicationStatus.ELIGIBILITY_FAILED)) {
+            throw new IllegalStateException("Cannot verify document: Application " + app.getApplicationNumber() +
+                    " is FLAGGED before manual review due to failed eligibility rules (" +
+                    (app.getFlagReason() != null ? app.getFlagReason() : app.getEligibilityRemarks()) +
+                    "). Ineligible applications cannot proceed through document verification.");
+        }
+
         User verifier = null;
         if (request.getVerifierId() != null) {
             verifier = userRepository.findById(request.getVerifierId()).orElse(null);
@@ -59,7 +67,6 @@ public class DocumentServiceImpl implements DocumentService {
         doc.setVerifiedAt(LocalDateTime.now());
         ApplicationDocument savedDoc = documentRepository.save(doc);
 
-        ScholarshipApplication app = doc.getApplication();
         String verifierName = (verifier != null) ? verifier.getFullName() : "Document Verification Officer";
 
         // Audit Log

@@ -29,6 +29,8 @@ public class ApplicationResponse {
     private Double eligibilityScore;
     private Boolean eligibilityPassed;
     private String eligibilityRemarks;
+    private Boolean isFlagged;
+    private String flagReason;
     private LocalDateTime submittedAt;
     private LocalDateTime verifiedAt;
     private String verifiedByName;
@@ -144,6 +146,10 @@ public class ApplicationResponse {
     public void setEligibilityPassed(Boolean eligibilityPassed) { this.eligibilityPassed = eligibilityPassed; }
     public String getEligibilityRemarks() { return eligibilityRemarks; }
     public void setEligibilityRemarks(String eligibilityRemarks) { this.eligibilityRemarks = eligibilityRemarks; }
+    public Boolean getIsFlagged() { return isFlagged; }
+    public void setIsFlagged(Boolean isFlagged) { this.isFlagged = isFlagged; }
+    public String getFlagReason() { return flagReason; }
+    public void setFlagReason(String flagReason) { this.flagReason = flagReason; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
     public LocalDateTime getVerifiedAt() { return verifiedAt; }

@@ -841,6 +841,47 @@ body {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
+.login-modal-box {
+    max-width: 620px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.login-modal-box .modal-body {
+    overflow-y: auto;
+}
+
+.auth-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.auth-tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: var(--transition);
+}
+
+.auth-tab-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.auth-tab-btn.active {
+    color: #38bdf8;
+    border-bottom-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.05);
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;

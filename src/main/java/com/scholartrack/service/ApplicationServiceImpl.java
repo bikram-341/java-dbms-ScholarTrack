@@ -83,9 +83,15 @@ public class ApplicationServiceImpl implements ApplicationService {
         app.setStatus(check.isEligible() ? ApplicationStatus.UNDER_DOCUMENT_VERIFICATION : ApplicationStatus.ELIGIBILITY_FAILED);
         app.setEligibilityScore(check.getScore());
         app.setEligibilityPassed(check.isEligible());
-        app.setEligibilityRemarks(check.isEligible() ?
-                "Automated check passed. Score: " + check.getScore() + "%. Submitted for manual verification desk." :
-                "Eligibility criteria deficit: " + String.join("; ", check.getFailedCriteria()));
+        if (!check.isEligible()) {
+            app.setIsFlagged(true);
+            app.setFlagReason("AUTOMATED_ELIGIBILITY_FAILURE: " + String.join("; ", check.getFailedCriteria()));
+            app.setEligibilityRemarks("Eligibility criteria deficit: " + String.join("; ", check.getFailedCriteria()));
+        } else {
+            app.setIsFlagged(false);
+            app.setFlagReason(null);
+            app.setEligibilityRemarks("Automated check passed. Score: " + check.getScore() + "%. Submitted for manual verification desk.");
+        }
         app.setSubmittedAt(LocalDateTime.now());
 
         ScholarshipApplication saved = applicationRepository.save(app);
@@ -100,12 +106,24 @@ public class ApplicationServiceImpl implements ApplicationService {
         );
         timelineRepository.save(t1);
 
+        // Add automated eligibility scrutiny timeline event
+        ApplicationTimeline tRule = new ApplicationTimeline(
+                saved,
+                "Automated Eligibility Scrutiny",
+                check.isEligible() ? "COMPLETED" : "FLAGGED",
+                check.isEligible() ?
+                        "Candidate satisfied all mandatory rule criteria (Score: " + check.getScore() + "%)." :
+                        "FLAGGED before manual review: Criteria deficit - " + String.join("; ", check.getFailedCriteria()),
+                "Rules Engine"
+        );
+        timelineRepository.save(tRule);
+
         // Add document verification stage
         ApplicationTimeline t2 = new ApplicationTimeline(
                 saved,
                 "Document Verification Desk",
-                check.isEligible() ? "IN_PROGRESS" : "REJECTED",
-                check.isEligible() ? "Assigned to Verification Officer for document compliance review." : "Disqualified due to eligibility criteria.",
+                check.isEligible() ? "IN_PROGRESS" : "FLAGGED",
+                check.isEligible() ? "Assigned to Verification Officer for document compliance review." : "Flagged before manual review due to failed eligibility criteria. Manual verification blocked.",
                 "System Automation"
         );
         timelineRepository.save(t2);
@@ -237,6 +255,12 @@ public class ApplicationServiceImpl implements ApplicationService {
         String dec = request.getDecision().toUpperCase();
 
         if ("APPROVED".equals(dec)) {
+            if (Boolean.TRUE.equals(app.getIsFlagged()) || Boolean.FALSE.equals(app.getEligibilityPassed()) || app.getStatus() == ApplicationStatus.ELIGIBILITY_FAILED) {
+                throw new IllegalStateException("Cannot approve application " + app.getApplicationNumber() +
+                        ": Application is FLAGGED before manual review due to failed eligibility criteria: " +
+                        (app.getFlagReason() != null ? app.getFlagReason() : app.getEligibilityRemarks()) +
+                        ". Ineligible applications cannot be sanctioned.");
+            }
             app.setStatus(ApplicationStatus.APPROVED);
             app.setDecisionAt(LocalDateTime.now());
             app.setDecisionRemarks(request.getRemarks() != null ? request.getRemarks() : "Application formally approved for scholarship grant.");
@@ -509,6 +533,8 @@ public class ApplicationServiceImpl implements ApplicationService {
         resp.setEligibilityScore(app.getEligibilityScore());
         resp.setEligibilityPassed(app.getEligibilityPassed());
         resp.setEligibilityRemarks(app.getEligibilityRemarks());
+        resp.setIsFlagged(app.getIsFlagged());
+        resp.setFlagReason(app.getFlagReason());
         resp.setSubmittedAt(app.getSubmittedAt());
         resp.setVerifiedAt(app.getVerifiedAt());
         resp.setVerifiedByName(app.getVerifiedBy() != null ? app.getVerifiedBy().getFullName() : null);

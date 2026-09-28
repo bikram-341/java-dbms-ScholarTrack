@@ -408,6 +408,24 @@ public class DataInitializer implements CommandLineRunner {
             timelineRepository.save(new ApplicationTimeline(app4, "Document Verification Desk", "COMPLETED", "Verification cleared. Forwarded to Evaluation Committee.", "Dr. Vikram Sharma (Officer)"));
             timelineRepository.save(new ApplicationTimeline(app4, "Committee Review & Sanction", "IN_PROGRESS", "Under final review in current sanction batch.", "Prof. Arvind Patel (Dean)"));
 
+            // Application 5: Rahul -> Chancellor's Fellowship (ELIGIBILITY_FAILED & FLAGGED)
+            ScholarshipApplication app5 = new ScholarshipApplication();
+            app5.setApplicationNumber("APP-2026-00105");
+            app5.setStudent(stu2);
+            app5.setScholarship(s3);
+            app5.setStatus(ApplicationStatus.ELIGIBILITY_FAILED);
+            app5.setEligibilityScore(61.2);
+            app5.setEligibilityPassed(false);
+            app5.setIsFlagged(true);
+            app5.setFlagReason("AUTOMATED_ELIGIBILITY_FAILURE: MIN_GPA: Student GPA 7.80 < Required 8.50");
+            app5.setEligibilityRemarks("Student GPA 7.80 < Required 8.50 for Chancellor Fellowship. Flagged before manual review.");
+            app5.setSubmittedAt(LocalDateTime.now().minusDays(1));
+            app5 = applicationRepository.save(app5);
+
+            timelineRepository.save(new ApplicationTimeline(app5, "Application Submission", "COMPLETED", "Application registered.", "Rahul Verma (Student)"));
+            timelineRepository.save(new ApplicationTimeline(app5, "Automated Eligibility Scrutiny", "FLAGGED", "FLAGGED before manual review: Student GPA 7.80 < Required 8.50.", "Rules Engine"));
+            timelineRepository.save(new ApplicationTimeline(app5, "Document Verification Desk", "FLAGGED", "Flagged before manual review due to failed eligibility criteria. Manual verification blocked.", "System Automation"));
+
             // 5. Initial Audit Logs
             auditLogRepository.save(new AuditLog(uPriya.getId(), "priya_sharma", AuditAction.APPLICATION_SUBMITTED, "ScholarshipApplication", app1.getId(), "Applied for CORP-WOMEN-STEM. Automated eligibility check passed."));
             auditLogRepository.save(new AuditLog(officer.getId(), "officer_sharma", AuditAction.DOCUMENT_VERIFIED, "ApplicationDocument", 1L, "Verified Income Certificate for Priya Sharma."));

@@ -57,12 +57,62 @@ function initSession() {
     }
 }
 
-function openLoginModal() {
+function openLoginModal(mode = 'login') {
     document.getElementById('login-modal').classList.add('open');
+    switchAuthMode(mode);
 }
 
 function closeLoginModal() {
     document.getElementById('login-modal').classList.remove('open');
+}
+
+function switchAuthMode(mode) {
+    const tabLogin = document.getElementById('tab-btn-login');
+    const tabSignup = document.getElementById('tab-btn-signup');
+    const paneLogin = document.getElementById('auth-pane-login');
+    const paneSignup = document.getElementById('auth-pane-signup');
+
+    if (mode === 'signup') {
+        if (tabSignup) tabSignup.classList.add('active');
+        if (tabLogin) tabLogin.classList.remove('active');
+        if (paneSignup) paneSignup.style.display = 'block';
+        if (paneLogin) paneLogin.style.display = 'none';
+        toggleSignupFields();
+    } else {
+        if (tabLogin) tabLogin.classList.add('active');
+        if (tabSignup) tabSignup.classList.remove('active');
+        if (paneLogin) paneLogin.style.display = 'block';
+        if (paneSignup) paneSignup.style.display = 'none';
+    }
+}
+
+function toggleSignupFields() {
+    const roleEl = document.getElementById('signup-role');
+    const studentFields = document.getElementById('signup-student-fields');
+    if (roleEl && studentFields) {
+        studentFields.style.display = (roleEl.value === 'ROLE_STUDENT') ? 'block' : 'none';
+    }
+}
+
+function autoFillDemoStudent() {
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    document.getElementById('signup-role').value = 'ROLE_STUDENT';
+    toggleSignupFields();
+    document.getElementById('signup-fullname').value = 'Maya Deshmukh';
+    document.getElementById('signup-username').value = 'maya_' + rand;
+    document.getElementById('signup-email').value = 'maya.' + rand + '@student.edu';
+    document.getElementById('signup-password').value = 'admin123';
+    document.getElementById('signup-phone').value = '+91 98' + rand + '1234';
+    document.getElementById('signup-institution').value = 'Indian Institute of Technology';
+    document.getElementById('signup-rollno').value = 'STU-2026-' + rand;
+    document.getElementById('signup-branch').value = 'Computer Science & AI';
+    document.getElementById('signup-degree').value = 'UNDERGRADUATE';
+    document.getElementById('signup-gpa').value = '8.85';
+    document.getElementById('signup-income').value = '240000';
+    document.getElementById('signup-year').value = '2';
+    document.getElementById('signup-category').value = 'OBC';
+    document.getElementById('signup-gender').value = 'FEMALE';
+    showToast('✨ Auto-filled sample student profile! Click "Register Account" to sign up.');
 }
 
 async function quickLogin(username, password) {
@@ -76,6 +126,88 @@ async function handleLoginSubmit(e) {
     const u = document.getElementById('login-username').value.trim();
     const p = document.getElementById('login-password').value;
     await performLogin(u, p);
+}
+
+async function handleSignupSubmit(e) {
+    e.preventDefault();
+    const role = document.getElementById('signup-role').value;
+    const username = document.getElementById('signup-username').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const email = document.getElementById('signup-email').value.trim();
+    const fullName = document.getElementById('signup-fullname').value.trim();
+    const phone = document.getElementById('signup-phone').value.trim();
+
+    if (!username || !password || !email || !fullName) {
+        showToast('Please fill all mandatory user fields (*)', 'error');
+        return;
+    }
+
+    const payload = {
+        username,
+        password,
+        email,
+        fullName,
+        phone,
+        role
+    };
+
+    if (role === 'ROLE_STUDENT') {
+        payload.studentRollNo = document.getElementById('signup-rollno').value.trim() || ('STU-2026-' + Math.floor(1000 + Math.random() * 9000));
+        payload.institutionName = document.getElementById('signup-institution').value.trim() || 'State Technical University';
+        payload.departmentBranch = document.getElementById('signup-branch').value.trim() || 'Engineering';
+        payload.degreeLevel = document.getElementById('signup-degree').value;
+        payload.currentYear = parseInt(document.getElementById('signup-year').value, 10) || 2;
+        payload.gpaOrPercentage = parseFloat(document.getElementById('signup-gpa').value) || 8.0;
+        payload.familyAnnualIncome = parseFloat(document.getElementById('signup-income').value) || 250000;
+        payload.category = document.getElementById('signup-category').value;
+        payload.gender = document.getElementById('signup-gender').value;
+    }
+
+    await performRegister(payload);
+}
+
+async function performRegister(payload) {
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            currentUser = data;
+            localStorage.setItem('scholartrack_user', JSON.stringify(data));
+            updateUserSessionUI(data);
+            closeLoginModal();
+            showToast(`🎉 Welcome, ${data.fullName}! Successfully registered as ${data.role.replace('ROLE_', '')}`);
+
+            // Refresh student dropdown across portal
+            await loadStudents();
+
+            // If registered as student, select them and navigate to Apply tab
+            if (data.role === 'ROLE_STUDENT') {
+                const select = document.getElementById('apply-student-select');
+                if (select && data.studentId) {
+                    select.value = data.studentId;
+                }
+                const applyTabBtn = document.querySelector('[data-tab="tab-apply"]');
+                if (applyTabBtn) applyTabBtn.click();
+            } else if (data.role === 'ROLE_VERIFICATION_OFFICER') {
+                document.querySelector('[data-tab="tab-verification"]').click();
+                loadPendingDocuments();
+            } else if (data.role === 'ROLE_COMMITTEE_MEMBER') {
+                document.querySelector('[data-tab="tab-committee"]').click();
+                loadCommitteeApplications();
+            }
+        } else {
+            const err = await res.json();
+            const errMsg = err.error || err.message || (err.fieldErrors ? Object.values(err.fieldErrors).join(', ') : 'Registration failed');
+            showToast('Registration error: ' + errMsg, 'error');
+        }
+    } catch (e) {
+        showToast('Registration connection failed: ' + e.message, 'error');
+    }
 }
 
 async function performLogin(username, password) {
@@ -118,24 +250,27 @@ async function performLogin(username, password) {
 
 function updateUserSessionUI(user) {
     const btnLogin = document.getElementById('btn-open-login');
+    const btnSignup = document.getElementById('btn-open-signup');
     const badge = document.getElementById('user-profile-badge');
     const navName = document.getElementById('nav-user-name');
     const navRole = document.getElementById('nav-user-role');
     const navAvatar = document.getElementById('nav-user-avatar');
 
     if (user) {
-        btnLogin.style.display = 'none';
-        badge.style.display = 'flex';
-        navName.textContent = user.fullName.split(' ')[0];
-        navRole.textContent = user.role.replace('ROLE_', '');
+        if (btnLogin) btnLogin.style.display = 'none';
+        if (btnSignup) btnSignup.style.display = 'none';
+        if (badge) badge.style.display = 'flex';
+        if (navName) navName.textContent = user.fullName.split(' ')[0];
+        if (navRole) navRole.textContent = user.role.replace('ROLE_', '');
 
         if (user.role === 'ROLE_STUDENT') navAvatar.innerHTML = '<i class="fa-solid fa-user-graduate"></i>';
         else if (user.role === 'ROLE_VERIFICATION_OFFICER') navAvatar.innerHTML = '<i class="fa-solid fa-stamp"></i>';
         else if (user.role === 'ROLE_COMMITTEE_MEMBER') navAvatar.innerHTML = '<i class="fa-solid fa-users"></i>';
         else navAvatar.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
     } else {
-        btnLogin.style.display = 'inline-flex';
-        badge.style.display = 'none';
+        if (btnLogin) btnLogin.style.display = 'inline-flex';
+        if (btnSignup) btnSignup.style.display = 'inline-flex';
+        if (badge) badge.style.display = 'none';
     }
 }
 
@@ -203,6 +338,8 @@ function initEventListeners() {
     });
 
     document.getElementById('login-form').addEventListener('submit', handleLoginSubmit);
+    const signupForm = document.getElementById('signup-form');
+    if (signupForm) signupForm.addEventListener('submit', handleSignupSubmit);
     document.getElementById('apply-form').addEventListener('submit', handleApplySubmit);
     document.getElementById('verify-form').addEventListener('submit', handleVerifySubmit);
     document.getElementById('resubmit-form').addEventListener('submit', handleResubmitSubmit);
@@ -513,6 +650,7 @@ function renderTrackerDetails(app) {
         'SUBMITTED': 1,
         'UNDER_DOCUMENT_VERIFICATION': 2,
         'DOCUMENTS_FLAGGED': 2,
+        'ELIGIBILITY_FAILED': 3,
         'ELIGIBILITY_VERIFIED': 3,
         'UNDER_COMMITTEE_REVIEW': 4,
         'APPROVED': 4,
@@ -521,14 +659,16 @@ function renderTrackerDetails(app) {
     };
 
     const currentStageIdx = stageMap[app.status] || 1;
-    const isFlagged = app.status === 'DOCUMENTS_FLAGGED';
+    const isDocFlagged = app.status === 'DOCUMENTS_FLAGGED';
+    const isEligibilityFlagged = app.status === 'ELIGIBILITY_FAILED' || (app.isFlagged && app.eligibilityPassed === false);
     const isRejected = app.status === 'REJECTED';
     const isDisbursed = app.status === 'DISBURSED';
 
     const getNodeClass = (nodeIdx) => {
         if (nodeIdx < currentStageIdx) return 'completed';
         if (nodeIdx === currentStageIdx) {
-            if (isFlagged && nodeIdx === 2) return 'flagged';
+            if (isDocFlagged && nodeIdx === 2) return 'flagged';
+            if (isEligibilityFlagged && nodeIdx === 3) return 'flagged';
             if (isRejected && nodeIdx === 4) return 'rejected';
             if (isDisbursed && nodeIdx === 5) return 'completed';
             return 'in_progress';
@@ -538,7 +678,7 @@ function renderTrackerDetails(app) {
 
     let statusBadgeClass = 'status-submitted';
     if (app.status === 'UNDER_DOCUMENT_VERIFICATION') statusBadgeClass = 'status-verification';
-    if (app.status === 'DOCUMENTS_FLAGGED') statusBadgeClass = 'status-flagged';
+    if (app.status === 'DOCUMENTS_FLAGGED' || app.status === 'ELIGIBILITY_FAILED' || app.isFlagged) statusBadgeClass = 'status-flagged';
     if (app.status === 'UNDER_COMMITTEE_REVIEW') statusBadgeClass = 'status-review';
     if (app.status === 'APPROVED') statusBadgeClass = 'status-approved';
     if (app.status === 'DISBURSED') statusBadgeClass = 'status-disbursed';
@@ -549,6 +689,9 @@ function renderTrackerDetails(app) {
                 <span class="tracker-id-badge">${app.applicationNumber}</span>
                 <h3 style="font-size:1.3rem; margin-top:0.4rem; color:#fff;">${app.scholarshipTitle}</h3>
                 <p style="font-size:0.85rem; color:#9ca3af;">Scheme Code: <strong>${app.scholarshipCode}</strong> | Provider: <strong>${app.providerType}</strong></p>
+                ${app.isFlagged ? `<div class="callout callout-warning" style="margin-top:0.6rem; padding:0.5rem 0.8rem; font-size:0.8rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>FLAGGED BEFORE MANUAL REVIEW:</strong> ${app.flagReason || app.eligibilityRemarks}
+                </div>` : ''}
             </div>
             <div style="text-align:right;">
                 <span class="status-pill ${statusBadgeClass}"><i class="fa-solid fa-circle-dot"></i> ${app.status.replace(/_/g, ' ')}</span>
@@ -566,17 +709,17 @@ function renderTrackerDetails(app) {
             <div class="step-node ${getNodeClass(2)}">
                 <div class="step-circle"><i class="fa-solid fa-file-shield"></i></div>
                 <span class="step-label">Doc Scrutiny</span>
-                <span class="step-sub">${isFlagged ? 'Action Needed' : 'Officer Desk'}</span>
+                <span class="step-sub">${isDocFlagged ? 'Action Needed' : 'Officer Desk'}</span>
             </div>
             <div class="step-node ${getNodeClass(3)}">
                 <div class="step-circle"><i class="fa-solid fa-award"></i></div>
                 <span class="step-label">Eligibility Match</span>
-                <span class="step-sub">Score: ${app.eligibilityScore}%</span>
+                <span class="step-sub">${isEligibilityFlagged ? '⚠️ Flagged' : 'Score: ' + app.eligibilityScore + '%'}</span>
             </div>
             <div class="step-node ${getNodeClass(4)}">
                 <div class="step-circle"><i class="fa-solid fa-users-gear"></i></div>
                 <span class="step-label">Committee Sanction</span>
-                <span class="step-sub">${app.status === 'APPROVED' || app.status === 'DISBURSED' ? 'Sanctioned' : 'Evaluation'}</span>
+                <span class="step-sub">${app.status === 'APPROVED' || app.status === 'DISBURSED' ? 'Sanctioned' : (isEligibilityFlagged ? 'Blocked' : 'Evaluation')}</span>
             </div>
             <div class="step-node ${getNodeClass(5)}">
                 <div class="step-circle"><i class="fa-solid fa-money-check-dollar"></i></div>
@@ -883,7 +1026,14 @@ async function loadCommitteeApplications() {
 
             tbody.innerHTML = apps.map(a => {
                 let actionHtml = '';
-                if (a.status === 'UNDER_COMMITTEE_REVIEW' || a.status === 'UNDER_DOCUMENT_VERIFICATION') {
+                const isItemFlagged = a.isFlagged || a.status === 'ELIGIBILITY_FAILED';
+
+                if (isItemFlagged) {
+                    actionHtml = `
+                        <button class="btn btn-secondary btn-sm" disabled style="opacity:0.45; cursor:not-allowed;" title="FLAGGED: Failed eligibility rules before manual review (${a.flagReason || a.eligibilityRemarks})"><i class="fa-solid fa-ban"></i> Flagged</button>
+                        <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="committeeDecision(${a.id}, 'REJECTED')"><i class="fa-solid fa-xmark"></i> Reject</button>
+                    `;
+                } else if (a.status === 'UNDER_COMMITTEE_REVIEW' || a.status === 'UNDER_DOCUMENT_VERIFICATION') {
                     actionHtml = `
                         <button class="btn btn-primary btn-sm" onclick="committeeDecision(${a.id}, 'APPROVED')"><i class="fa-solid fa-check"></i> Sanction</button>
                         <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="committeeDecision(${a.id}, 'REJECTED')"><i class="fa-solid fa-xmark"></i> Reject</button>
@@ -900,14 +1050,17 @@ async function loadCommitteeApplications() {
                     actionHtml = `<span style="color:#9ca3af; font-size:0.75rem;">${a.status}</span>`;
                 }
 
+                let badgeClass = `status-${a.status.toLowerCase()}`;
+                if (isItemFlagged) badgeClass = 'status-flagged';
+
                 return `
-                    <tr>
+                    <tr style="${isItemFlagged ? 'background:rgba(239, 68, 68, 0.05);' : ''}">
                         <td><a href="#" onclick="quickTrack('${a.applicationNumber}'); document.querySelector('[data-tab=tab-tracker]').click();" style="color:#38bdf8; font-weight:700;">${a.applicationNumber}</a></td>
                         <td>${a.studentName} (${a.studentCategory || 'General'})</td>
                         <td><strong>${a.scholarshipTitle}</strong><br><span style="color:#34d399;">₹${Number(a.financialAidAmount).toLocaleString('en-IN')}</span></td>
                         <td><span style="color:#60a5fa; font-weight:700;">${a.gpaOrPercentage} CGPA</span></td>
                         <td>₹${Number(a.familyAnnualIncome).toLocaleString('en-IN')}</td>
-                        <td><span class="status-pill status-${a.status.toLowerCase()}">${a.status.replace(/_/g, ' ')}</span></td>
+                        <td><span class="status-pill ${badgeClass}"><i class="fa-solid ${isItemFlagged ? 'fa-triangle-exclamation' : 'fa-circle-dot'}"></i> ${isItemFlagged ? 'FLAGGED (INELIGIBLE)' : a.status.replace(/_/g, ' ')}</span></td>
                         <td><div style="display:flex; gap:0.4rem;">${actionHtml}</div></td>
                     </tr>
                 `;
